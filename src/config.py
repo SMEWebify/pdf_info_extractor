@@ -4,10 +4,21 @@ import os
 from pathlib import Path
 from typing import Dict, Any
 import dotenv
+
 # Directory paths
 BASE_DIR = Path(__file__).parent.parent
-INVOICES_DIR = BASE_DIR / "invoices_files"
-OUTPUT_DIR = BASE_DIR / "output"
+
+INVOICES_DIR = Path(r"C:\laragon\www\WebErpMesv2\storage\app\public\invoices_files")
+OUTPUT_DIR = Path(r"C:\laragon\www\WebErpMesv2\storage\app\public\output")
+PROCESSED_DIR = OUTPUT_DIR / "processed"
+
+# On crée les dossiers (mkdir fonctionne maintenant car ce sont des objets Path)
+OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
+PROCESSED_DIR.mkdir(exist_ok=True, parents=True)
+
+# Le chemin du fichier de rapport (concaténation avec / )
+PROCESSING_REPORT_PATH = OUTPUT_DIR / "processing_report.csv"
+
 
 # Ensure output directory exists
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -21,10 +32,15 @@ if not OPENROUTER_API_KEY:
 
 # LLM Configuration
 LLM_CONFIG = {
-    "model": "meta-llama/llama-3.3-70b-instruct:free",
+    #"model": "meta-llama/llama-3.3-70b-instruct:free",
+    #"base_url": "https://openrouter.ai/api/v1",
+    #"api_key": os.getenv("OPENROUTER_API_KEY"),
+    #"temperature": 0,
+	"model": "google/gemini-2.0-flash-001", 
     "base_url": "https://openrouter.ai/api/v1",
     "api_key": os.getenv("OPENROUTER_API_KEY"),
     "temperature": 0,
+	"response_format": { "type": "json_object" }
 }
 
 # Canonical schema for invoice line items
@@ -44,7 +60,11 @@ PROCESSING_CONFIG = {
 }
 
 # Prompts
-SYSTEM_PROMPT = """You are a data extraction engine. Your task is to extract ONLY invoice line items from raw tables extracted from a PDF. 
+SYSTEM_PROMPT = """ou are a data extraction engine.
+Output ONLY a valid JSON array of objects. 
+DO NOT include markdown formatting like ```json. 
+DO NOT include any text before or after the JSON
+. Your task is to extract ONLY invoice line items from raw tables extracted from a PDF. 
 
 STRICT RULES: 
 - Output STRICT JSON only 
